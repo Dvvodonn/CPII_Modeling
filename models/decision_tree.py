@@ -1,5 +1,14 @@
 from graphviz import Digraph
 import numpy as np
+from numba import njit
+
+@njit
+def variance_jit(y):
+    mean = np.mean(y)
+    total = 0.0
+    for i in y:
+        total += (i - mean) ** 2
+    return total / len(y)
 
 class Node:
     def __init__(self, feature=None, threshold=None, left=None, right=None, value=None):
@@ -24,11 +33,11 @@ class Node:
         if self.is_leaf:
             print(f"{indent}Predict: {self.prediction:.2f}")
         else:
-            print(f"{indent}If feature[{self.feature}] <= {self.threshold:.2f}:")
+            print(f"{indent}If feature[{self.feature}] <= {self.threshold}:")
             self.left.print_tree(depth + 1)
             print(f"{indent}else:")
             self.right.print_tree(depth + 1)
-
+            
     def to_dict(self):
         if self.is_leaf:
             return {'value': self.prediction}
@@ -63,6 +72,7 @@ class DecisionTree:
                 return self._predict_one(x, node.left)
             else:
                 return self._predict_one(x, node.right)
+            
     def predict(self, X):
         """
         Input: X 2D array of input samples
@@ -95,18 +105,8 @@ class DecisionTree:
                 X_right.append(X[x])
                 y_right.append(y[x])
         return np.array(X_left), np.array(X_right), np.array(y_left), np.array(y_right)
-    
     def _variance(self, y):
-        """
-        Input: 1d array of feature vars
-        Output: Var value float
-        """
-        # calculate the mean squared error for the values
-        mean = y.mean()
-        total = 0
-        for i in y:
-            total = total + (i-mean)**2
-        return total/len(y)
+        return variance_jit(y)
     
     def _bestsplit(self,X,y):
         """
@@ -119,7 +119,7 @@ class DecisionTree:
         best_threshold = None
         best_feature_index = None
         for i in range(X.shape[1]):
-            for threshold in np.unique(X[:,i]):
+            for threshold in set(X[:,i]):
                 X_left, X_right, y_left, y_right = self._split(X,y,i,threshold)
                 n_left = len(y_left)
                 n_right = len(y_right)
@@ -133,21 +133,21 @@ class DecisionTree:
                     best_feature_index = i
         if best_feature_index is not None:
             # optional: refine the best threshold between adjacent unique values
-            feature_values = np.unique(X[:, best_feature_index])
-            idx = np.where(feature_values == best_threshold)[0][0]
-            if idx == 0 or idx == len(feature_values) - 1:
-                return best_feature_index, best_threshold
-            Z = np.linspace(feature_values[idx-1], feature_values[idx+1],num=20)
-            for threshold in Z:
-                X_left, X_right, y_left, y_right = self._split(X,y,best_feature_index,threshold)
-                n_left = len(y_left)
-                n_right = len(y_right)
-                if n_left == 0 or n_right == 0:
-                    continue          
-                total_var = (n_left/n)*(self._variance(y_left)) + (n_right/n)*(self._variance(y_right))
-                if total_var < best_score:
-                    best_score = total_var
-                    best_threshold = threshold
+            # feature_values = np.unique(X[:, best_feature_index])
+            # idx = np.where(feature_values == best_threshold)[0][0]
+            # if idx == 0 or idx == len(feature_values) - 1:
+            #     return best_feature_index, best_threshold
+            # Z = np.linspace(feature_values[idx-1], feature_values[idx+1],num=10)
+            # for threshold in Z:
+            #     X_left, X_right, y_left, y_right = self._split(X,y,best_feature_index,threshold)
+            #     n_left = len(y_left)
+            #     n_right = len(y_right)
+            #     if n_left == 0 or n_right == 0:
+            #         continue          
+            #     total_var = (n_left/n)*(self._variance(y_left)) + (n_right/n)*(self._variance(y_right))
+            #     if total_var < best_score:
+            #         best_score = total_var
+            #         best_threshold = threshold
             return best_feature_index, best_threshold
     def _growtree(self, X, y, depth=0):
         """
@@ -156,7 +156,7 @@ class DecisionTree:
         """
         # stopping condition: max depth reached or pure leaf or not enough samples
         n_samples = len(y)
-        if (depth >= self.max_depth or 
+        if ((self.max_depth is not None and depth >= self.max_depth) or 
             n_samples < self.min_sample_split or
             np.all(y == y[0])):
             return Node(value=y.mean()) 
@@ -177,7 +177,7 @@ class DecisionTree:
             if node.is_leaf:
                 dot.node(str(node_id), f'Predict: {node.prediction:.2f}', shape='box')
                 return node_id
-            dot.node(str(node_id), f'X[{node.feature}] <= {node.threshold:.2f}')
+            dot.node(str(node_id), f'X[{node.feature}] <= {node.threshold}')
             left_id = node_id + 1
             left_id = add_nodes(dot, node.left, left_id)
             right_id = left_id + 1
@@ -185,7 +185,7 @@ class DecisionTree:
             dot.edge(str(node_id), str(left_id), label='True')
             dot.edge(str(node_id), str(right_id), label='False')
             return right_id
-
+        
         dot = Digraph()
         add_nodes(dot, self.root)
         dot.render(out_file, format=format, cleanup=True)
