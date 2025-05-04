@@ -1,7 +1,9 @@
 import numpy as np
+from models.Baseclass import Model
 
-class LinearRegression:
+class LinearRegression(Model):
     def __init__(self):
+        super().__init__(name="LinearRegression")
         self.coefficients = None  # will include bias as first term
 
     def _add_bias(self, X):

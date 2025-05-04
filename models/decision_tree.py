@@ -1,3 +1,4 @@
+from models.Baseclass import Model
 from graphviz import Digraph
 import numpy as np
 from numba import njit
@@ -49,13 +50,14 @@ class Node:
         }
 
 
-class DecisionTree:
+class DecisionTree(Model):
 
     def __init__(self, min_sample_split = 2,max_depth = None):
         """
         Input: min_sample_split int, max_depth int or None
         Output: None
         """
+        super().__init__(name="DecisionTree")
         self.min_sample_split = min_sample_split
         self.root = None
         self.max_depth = max_depth
