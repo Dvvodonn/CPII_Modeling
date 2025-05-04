@@ -1,8 +1,9 @@
 from decision_tree import DecisionTree
 import numpy as np
-
-class GradientBoostingRegressor:
+from models.Baseclass import Model
+class GradientBoostingRegressor(Model):
     def __init__(self, n_estimators=100, learning_rate=0.1, max_depth=3, min_sample_split=2):
+        super().__init__(name="Gradient Boosting")
         self.n_estimators = n_estimators
         self.learning_rate = learning_rate
         self.max_depth = max_depth
