@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: CPII_RealEstate
+Version: 0.1
+Summary: From-scratch machine learning models to predict real estate prices.
+Author: Daveed Vodonenko
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Dynamic: author
+Dynamic: classifier
+Dynamic: summary

@@ -1,43 +1,41 @@
+
+
 import numpy as np
-import sys
-import os
-import pickle
+import pytest
+from CPII_RealEstate.models.decision_tree import DecisionTree
+from sklearn.metrics import r2_score
 
-# Ensure parent directory is in path for local imports
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from utils.data_preprocessing import preprocess_for_training
-from models.decision_tree import DecisionTree
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+@pytest.fixture
+def simple_dt_model():
+    # y = 4x + 3 + small noise
+    rng = np.random.RandomState(1)
+    X = rng.rand(50, 1)
+    y = 4 * X.flatten() + 3 + rng.normal(scale=0.05, size=50)
+    model = DecisionTree(max_depth=3)
+    model.fit_with_timing(X, y)
+    return model, X, y
 
-def test_decision_tree(retrain=False):
-    X_train, X_test, y_train, y_test = preprocess_for_training("data/house_data.csv")
+def test_import():
+    # ensure the class is importable
+    assert DecisionTree is not None
 
-    if not retrain and os.path.exists("outputs/tree_model.pkl"):
-        with open("outputs/tree_model.pkl", "rb") as f:
-            tree = pickle.load(f)
-        print("Loaded model from file.")
-    else:
-        tree = DecisionTree(max_depth=8, min_sample_split=10)
-        tree.fit_with_timing(X_train, y_train)
-        with open("outputs/tree_model.pkl", "wb") as f:
-            pickle.dump(tree, f)
+def test_max_depth_attribute(simple_dt_model):
+    model, X, y = simple_dt_model
+    # check that the max_depth parameter was stored
+    assert hasattr(model, 'max_depth')
+    assert model.max_depth == 3
 
-    preds = tree.predict(X_test)
-    print("Sample Predictions:", preds)
+def test_predict_output_type_and_shape(simple_dt_model):
+    model, X, y = simple_dt_model
+    preds = model.predict(X)
+    # predictions should be a numpy array of the same length as y
+    assert isinstance(preds, np.ndarray)
+    assert preds.shape == y.shape
 
-    try:
-        tree.root.print_tree()
-    except Exception as e:
-        print(f"Error printing tree: {e}")
-
-    mae = mean_absolute_error(y_test, preds)
-    mse = mean_squared_error(y_test, preds)
-    rmse = np.sqrt(mse)
-    r2 = r2_score(y_test, preds)
-
-    print(f"MAE: {mae:.2f}")
-    print(f"RMSE: {rmse:.2f}")
-    print(f"R² Score: {r2:.2f}")
-
-if __name__ == "__main__":
-    test_decision_tree(retrain="--retrain" in sys.argv)
+def test_score_consistency(simple_dt_model):
+    model, X, y = simple_dt_model
+    preds = model.predict(X)
+    score_method = model.score(X, y)
+    # compare against sklearn's r2_score
+    expected = r2_score(y, preds)
+    assert pytest.approx(expected, rel=1e-4) == score_method

@@ -1,0 +1,2 @@
+[console_scripts]
+predict-house = CPII_RealEstate.predict_from_input:main

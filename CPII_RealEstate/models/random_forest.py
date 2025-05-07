@@ -1,9 +1,9 @@
 import numpy as np
-from models.decision_tree import DecisionTree
-from models.Baseclass import Model
+from .decision_tree import DecisionTree
+from .Baseclass import Model
 
 class RandomForest(Model):
-    def __init__(self, n_estimators=10, max_depth=None, min_sample_split=2):
+    def __init__(self, n_estimators=100, max_depth=None, min_sample_split=2):
         super().__init__(name="RandomForest")
         """
         Initialize the random forest with given parameters.

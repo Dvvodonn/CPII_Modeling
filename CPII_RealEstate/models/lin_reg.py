@@ -1,5 +1,5 @@
 import numpy as np
-from models.Baseclass import Model
+from CPII_RealEstate.models.Baseclass import Model
 
 class LinearRegression(Model):
     def __init__(self):

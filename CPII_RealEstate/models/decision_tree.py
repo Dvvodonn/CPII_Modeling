@@ -1,4 +1,4 @@
-from models.Baseclass import Model
+from .Baseclass import Model
 from graphviz import Digraph
 import numpy as np
 from numba import njit
@@ -10,6 +10,8 @@ def variance_jit(y):
     for i in y:
         total += (i - mean) ** 2
     return total / len(y)
+
+
 
 class Node:
     def __init__(self, feature=None, threshold=None, left=None, right=None, value=None):
@@ -87,6 +89,10 @@ class DecisionTree(Model):
         Input: X 2D array of features, y 1D array of targets
         Output: None
         """
+        # Ensure numeric types for Numba-compiled functions
+        self.global_mean = y.mean() 
+        X = np.asarray(X, dtype=np.float64)
+        y = np.asarray(y, dtype=np.float64)
         self.root = self._growtree(X, y)
 
     def _split(self,X,y,feature_index, threshold):
@@ -96,66 +102,58 @@ class DecisionTree(Model):
             feature index the feature on which split occurs int
             threshold the value on which the data is split
         """
-        # split the dataset into left and right groups based on the threshold
-        X_left, X_right = [],[]
-        y_left, y_right = [], []
-        for x in range(len(X)):
-            if X[x,feature_index] <= threshold:
-                X_left.append(X[x])
-                y_left.append(y[x])
-            else:
-                X_right.append(X[x])
-                y_right.append(y[x])
-        return np.array(X_left), np.array(X_right), np.array(y_left), np.array(y_right)
+        mask = X[:, feature_index] <= threshold
+        return X[mask], X[~mask], y[mask], y[~mask]
     def _variance(self, y):
         return variance_jit(y)
     
-    def _bestsplit(self,X,y):
+    def _bestsplit(self, X, y):
         """
         Input: X 2D array of features, y 1D array of targets
         Output: Tuple of (best_feature_index, best_threshold)
         """
-        # loop through all features and thresholds to find the best split
         n = len(y)
         best_score = float('inf')
-        best_threshold = None
         best_feature_index = None
+        best_threshold = None
+
         for i in range(X.shape[1]):
-            for threshold in set(X[:,i]):
-                X_left, X_right, y_left, y_right = self._split(X,y,i,threshold)
+            x_column = X[:, i]
+            sorted_indices = np.argsort(x_column)
+            x_sorted = x_column[sorted_indices]
+            y_sorted = y[sorted_indices]
+
+            for j in range(1, len(y)):
+                if x_sorted[j] == x_sorted[j - 1]:
+                    continue
+                threshold = (x_sorted[j] + x_sorted[j - 1]) / 2
+
+                y_left = y_sorted[:j]
+                y_right = y_sorted[j:]
+
                 n_left = len(y_left)
                 n_right = len(y_right)
-                # skip splits that don't divide the data
-                if n_left == 0 or n_right == 0:
-                    continue
-                total_var = (n_left/n)*(self._variance(y_left)) + (n_right/n)*(self._variance(y_right))
+
+                var_left = np.var(y_left)
+                var_right = np.var(y_right)
+
+                total_var = (n_left / n) * var_left + (n_right / n) * var_right
+
                 if total_var < best_score:
                     best_score = total_var
                     best_threshold = threshold
                     best_feature_index = i
-        if best_feature_index is not None:
-            # optional: refine the best threshold between adjacent unique values
-            # feature_values = np.unique(X[:, best_feature_index])
-            # idx = np.where(feature_values == best_threshold)[0][0]
-            # if idx == 0 or idx == len(feature_values) - 1:
-            #     return best_feature_index, best_threshold
-            # Z = np.linspace(feature_values[idx-1], feature_values[idx+1],num=10)
-            # for threshold in Z:
-            #     X_left, X_right, y_left, y_right = self._split(X,y,best_feature_index,threshold)
-            #     n_left = len(y_left)
-            #     n_right = len(y_right)
-            #     if n_left == 0 or n_right == 0:
-            #         continue          
-            #     total_var = (n_left/n)*(self._variance(y_left)) + (n_right/n)*(self._variance(y_right))
-            #     if total_var < best_score:
-            #         best_score = total_var
-            #         best_threshold = threshold
-            return best_feature_index, best_threshold
+
+        return best_feature_index, best_threshold
     def _growtree(self, X, y, depth=0):
         """
         Input: X 2D array of features, y 1D array of targets, depth int
         Output: Root Node of a (sub)tree, or leaf node
         """
+        # If no split was found, return a leaf
+            # If there are no samples left, return a leaf with the global mean
+        if y.size == 0:
+            return Node(value=self.global_mean)
         # stopping condition: max depth reached or pure leaf or not enough samples
         n_samples = len(y)
         if ((self.max_depth is not None and depth >= self.max_depth) or 
@@ -163,6 +161,8 @@ class DecisionTree(Model):
             np.all(y == y[0])):
             return Node(value=y.mean()) 
         feature_index, threshold = self._bestsplit(X,y)
+        if feature_index is None or threshold is None:
+            return Node(value=y.mean())
         X_left, X_right, y_left, y_right = self._split(X,y,feature_index,threshold)
         # recursively build left and right subtrees
         right_subtree = self._growtree(X_right,y_right,depth+1)

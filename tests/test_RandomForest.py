@@ -1,45 +1,44 @@
-
-
-import sys
-import os
-import pickle
 import numpy as np
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import pytest
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from models.random_forest import RandomForest
-from utils.data_preprocessing import preprocess_for_training
+from CPII_RealEstate.models.random_forest import RandomForest
 
-def test_random_forest(retrain=False):
-    """
-    Tests Random Forests.  --retrain to retrain model, 
-    otherwise previous model will be loaded
-    """
-    X_train, X_test, y_train, y_test = preprocess_for_training("data/house_data.csv")
-    model_path = "outputs/random_forest_model.pkl"
+@pytest.fixture
+def simple_rf_model():
+    # create synthetic data: y = 2.5*x0 - 1.0*x1 + noise
+    rng = np.random.RandomState(0)
+    X = rng.rand(30, 4)
+    y = X[:, 0] * 2.5 + X[:, 1] * (-1.0) + rng.normal(scale=0.1, size=30)
+    model = RandomForest(n_estimators=10, max_depth=5)
+    model.fit_with_timing(X, y)
+    return model, X, y
 
-    if not retrain and os.path.exists(model_path):
-        with open(model_path, "rb") as f:
-            forest = pickle.load(f)
-        print("Loaded Random Forest model from file.")
-    else:
-        forest = RandomForest(n_estimators=10, max_depth=8, min_sample_split=10)
-        forest.fit_with_timing(X_train, y_train)
-        with open(model_path, "wb") as f:
-            pickle.dump(forest, f)
-        print("Trained and saved Random Forest model.")
+def test_import():
+    # ensure the class is importable
+    assert RandomForest is not None
 
-    preds = forest.predict(X_test)
+def test_n_estimators_attribute(simple_rf_model):
+    model, X, y = simple_rf_model
+    # check that the n_estimators parameter was stored
+    assert hasattr(model, 'n_estimators')
+    assert model.n_estimators == 10
 
-    mae = mean_absolute_error(y_test, preds)
-    mse = mean_squared_error(y_test, preds)
-    rmse = np.sqrt(mse)
-    r2 = r2_score(y_test, preds)
+def test_predict_output_type_and_shape(simple_rf_model):
+    model, X, y = simple_rf_model
+    preds = model.predict(X)
+    # predictions should be a numpy array of the same length as y
+    assert isinstance(preds, np.ndarray)
+    assert preds.shape == y.shape
 
-    print("Random Forest Evaluation:")
-    print(f"MAE: {mae:.2f}")
-    print(f"RMSE: {rmse:.2f}")
-    print(f"R² Score: {r2:.2f}")
+def test_score_between_0_and_1(simple_rf_model):
+    model, X, y = simple_rf_model
+    score = model.score(X, y)
+    # R^2 score should be between 0 and 1 on training data
+    assert 0.0 <= score <= 1.0
 
-if __name__ == "__main__":
-    test_random_forest(retrain="--retrain" in sys.argv)
+def test_performance_mae(simple_rf_model):
+    model, X, y = simple_rf_model
+    preds = model.predict(X)
+    mae = np.mean(np.abs(preds - y))
+    # with low noise, mean absolute error should be small
+    assert mae < 0.5

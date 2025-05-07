@@ -7,7 +7,7 @@ def load_data(filepath: str):
 
 def clean_data(df: pd.DataFrame):
     df = df.copy()
-    df.drop(columns=['waterfront','sqft_lot15','sqft_living15','long','lat','zipcode','sqft_basement','sqft_above','date','id'], errors='ignore')
+    df = df.drop(columns=['waterfront','sqft_lot15','sqft_living15','long','lat','zipcode','sqft_basement','sqft_above','date','id'], errors='ignore')
     df = df.dropna()
     return df
 
@@ -17,8 +17,10 @@ def split_features_targets(df: pd.DataFrame):
     return X,y
 
 def preprocess_for_training(filepath: str):
+    print('_______________-')
     df = load_data(filepath)
     df = clean_data(df)
+    print(df.columns)
     X, y = split_features_targets(df)
     return train_test_split(X, y, test_size=0.2, random_state=42)
 
