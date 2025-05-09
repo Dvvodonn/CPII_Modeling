@@ -3,6 +3,11 @@ import sys
 import os
 import pickle
 import itertools
+
+# Storing params
+PARAMS_FILE = "CPII_RealEstate/outputs/dt_best_params.pkl"
+
+
 # Ensure parent directory is in path for local imports
 from CPII_RealEstate.models.decision_tree import DecisionTree
 from CPII_RealEstate.utils.data_preprocessing import preprocess_for_training
@@ -21,7 +26,7 @@ def tune_and_evaluate():
         'min_sample_split': [2, 4, 8, 16]
     }
     best_mae = float('inf')
-    best_params = None
+    best_params = {}
     # Grid search
     for depth, mss in itertools.product(param_grid['max_depth'], param_grid['min_sample_split']):
         tree = DecisionTree(max_depth=depth, min_sample_split=mss)
@@ -31,9 +36,16 @@ def tune_and_evaluate():
         print(f"Params: max_depth={depth}, min_sample_split={mss} -> MAE: {mae:.2f}")
         if mae < best_mae:
             best_mae = mae
-            best_params = (depth, mss)
-    print(f"\nBest params: max_depth={best_params[0]}, min_sample_split={best_params[1]} with MAE: {best_mae:.2f}")
-
+            best_params = {"max_depth": depth, "min_sample_split": mss}
+    print(f"\nBest params: max_depth={best_params['max_depth']}, "
+            f"min_sample_split={best_params['min_sample_split']} "
+            f"with MAE: {best_mae:.2f}")
+    # persist tuned hyperparameters for later
+    os.makedirs(os.path.dirname(PARAMS_FILE), exist_ok=True)
+    with open(PARAMS_FILE, "wb") as f:
+       pickle.dump(best_params, f)
+    print(f" Saved tuned hyperparameters → {PARAMS_FILE}")
+    
 def train_decision_tree(retrain=False):
     X_train, X_test, y_train, y_test = preprocess_for_training("CPII_RealEstate/data/house_data.csv")
     if not retrain and os.path.exists("CPII_RealEstate/outputs/tree_model.pkl"):
@@ -41,7 +53,15 @@ def train_decision_tree(retrain=False):
             tree = pickle.load(f)
         print("Loaded model from file.")
     else:
-        tree = DecisionTree(max_depth=20, min_sample_split=4)
+        # load tuned hyperparameters if available, else use defaults
+        if os.path.exists(PARAMS_FILE):
+            with open(PARAMS_FILE, "rb") as f:
+                params = pickle.load(f)
+            print(f"Loaded tuned hyperparameters: {params}")
+        else:
+            params = {"max_depth": 20, "min_sample_split": 4}
+            print(f"No tuned params found; using defaults: {params}")
+        tree = DecisionTree(**params)
         tree.fit_with_timing(X_train, y_train)
         with open("CPII_RealEstate/outputs/tree_model.pkl", "wb") as f:
             pickle.dump(tree, f)
@@ -49,10 +69,12 @@ def train_decision_tree(retrain=False):
     preds = tree.predict(X_test)
     print("Sample Predictions:", preds)
 
+    """
     try:
         tree.root.print_tree()
     except Exception as e:
         print(f"Error printing tree: {e}")
+    """
 
     mae = mean_absolute_error(y_test, preds)
     mse = mean_squared_error(y_test, preds)
