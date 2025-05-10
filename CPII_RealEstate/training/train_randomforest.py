@@ -11,7 +11,7 @@ from CPII_RealEstate.utils.data_preprocessing import preprocess_for_training
 from CPII_RealEstate.models.random_forest import RandomForest
 
 # where we’ll stash (and later reload) our tuned RF hyperparameters
-PARAMS_FILE_RF = "CPII_RealEstate/outputs/rf_best_params.pkl"
+PARAMS_FILE_RF = "CPII_RealEstate/training/best_params/rf_best_params.pkl"
 # where we save/load the final Random Forest model
 MODEL_PATH      = "CPII_RealEstate/outputs/random_forest_model.pkl"
 

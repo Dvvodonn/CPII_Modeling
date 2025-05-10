@@ -5,7 +5,7 @@ import pickle
 import itertools
 
 # Storing params
-PARAMS_FILE = "CPII_RealEstate/outputs/dt_best_params.pkl"
+PARAMS_FILE = "CPII_RealEstate/training/best_params/dt_best_params.pkl"
 
 
 # Ensure parent directory is in path for local imports

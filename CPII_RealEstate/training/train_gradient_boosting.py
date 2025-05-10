@@ -11,7 +11,7 @@ from CPII_RealEstate.utils.data_preprocessing import preprocess_for_training
 from CPII_RealEstate.models.gradientboost import GradientBoostingRegressor
 
 # where we’ll stash (and later reload) tuned GBM hyperparameters
-PARAMS_FILE_GBM = "CPII_RealEstate/outputs/gbm_best_params.pkl"
+PARAMS_FILE_GBM = "CPII_RealEstate/training/best_params/gbm_best_params.pkl"
 # where we save/load the final trained model
 MODEL_PATH_GBM  = "CPII_RealEstate/outputs/gradient_boosting_model.pkl"
 
