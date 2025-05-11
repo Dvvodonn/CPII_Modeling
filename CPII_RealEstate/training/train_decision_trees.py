@@ -22,8 +22,8 @@ def tune_and_evaluate():
     X_train, X_test, y_train, y_test = preprocess_for_training("CPII_RealEstate/data/house_data.csv")
     # Define parameter grid
     param_grid = {
-        'max_depth': [10, 15, 20, 25],
-        'min_sample_split': [2, 4, 8, 16]
+        'max_depth': [10, 20, 30],
+        'min_sample_split': [10,20,30]
     }
     best_mae = float('inf')
     best_params = {}

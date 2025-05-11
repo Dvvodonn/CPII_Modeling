@@ -28,9 +28,9 @@ def tune_and_evaluate():
 
     # Define parameter grid
     param_grid = {
-        'n_estimators':     [150, 200],
-        'max_depth':        [14, 16],
-        'min_sample_split': [10]
+        'n_estimators':     [50, 150, 200],
+        'max_depth':        [None, 14, 16],
+        'min_sample_split': [2, 5, 10]
     }
 
     best_mae = float('inf')
@@ -96,8 +96,8 @@ def train_and_evaluate(retrain=False):
             print(f"✔ Loaded tuned RF hyperparameters: {params}")
         else:
             params = {
-                "n_estimators":     125,
-                "max_depth":        10,
+                "n_estimators":     200,
+                "max_depth":        None,
                 "min_sample_split": 10
             }
             print(f"⚠ No tuned RF params found; using defaults: {params}")

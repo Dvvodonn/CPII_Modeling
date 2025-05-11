@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-
+import pickle
 import streamlit as st
 import numpy as np
 
@@ -11,7 +11,7 @@ PROJECT_ROOT = THIS_DIR.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 # Custom unpickler to remap the 'outputs.random_forest_model' module path
-import pickle
+
 class RenameUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
         # Redirect old module path to your actual model code location
