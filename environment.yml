@@ -9,7 +9,8 @@ dependencies:
   - graphviz
   - python-graphviz
   - streamlit            
-  - pip                 
+  - pip    
+  - numba             
   - pip:
       - typer[all]      
       - rich             

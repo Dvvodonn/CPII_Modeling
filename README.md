@@ -45,10 +45,10 @@ CPII_RealEstate/
 ## Installation
 
 ```bash
-conda env create -f environment.yml
-conda activate real_estate_env
 git clone https://github.com/Dvvodonn/CPII_RealEstate.git
 cd CPII_RealEstate
+conda env create -f environment.yml
+conda activate real_estate_env
 pip install -e .
 ```
 
