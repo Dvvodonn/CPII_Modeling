@@ -28,10 +28,10 @@ def tune_and_evaluate():
 
     # Parameter grid
     param_grid = {
-        'n_estimators':      [150, 200, 300],
+        'n_estimators':      [50, 100, 150, 200],
         'learning_rate':     [0.01, 0.05, 0.1],
         'max_depth':         [3, 5, 7],
-        'min_sample_split':  [2, 10, 15]
+        'min_sample_split':  [2, 5, 10]
     }
 
     best_mae = float('inf')

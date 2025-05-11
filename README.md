@@ -53,18 +53,36 @@ pip install -e .
 ```
 
 ---
-
-## Train a Model
+## Training and Tuning the Models
 
 ```bash
-python -m CPII_RealEstate.training.train_decision_trees --retrain
+python -m CPII_RealEstate.training.train_{model_name} [--tune] [--retrain]
 ```
+
+Where `{model_name}` is one of:
+- `decision_trees`
+- `gradient_boosting`
+- `randomforest`
+- `linear_regression`
+
+## Script Behaviors
+
+1. `--tune`
+   Runs a grid search over the model’s hyperparameters, prints MAE for each combination, and saves the best parameter set to `training/best_params/{model_name_abbreviation}_best_params.pkl`.
+
+2. `--retrain`  
+   Forces training of a new model: it loads the saved best-parameter file if present (or falls back to defaults), trains the model, and saves it to `outputs/{model_name}_model.pkl`.
+
+3. **No flags**  
+   If a trained model file exists (`outputs/{model_name}_model.pkl`), it loads and evaluates that model; otherwise it behaves like `--retrain` (loads parameters or defaults, trains, saves, and evaluates).
 
 ---
 
 ## Tune Hyperparameters
 
 Input grid to be iterated over in the `tune_and_evaluate` method inside the training script.
+
+- Example:
 
 ```bash
 python -m CPII_RealEstate.training.train_gradient_boosting --tune
@@ -100,8 +118,6 @@ pytest
 
 - **Gradient Boosting**:  
   Best params: `n_estimators=300`, `learning_rate=0.1`, `max_depth=5`, `min_sample_split=15` with MAE: 127542.15
-
-
 
 
 ---
