@@ -1,2 +1,3 @@
+git rm --cached -r __pycache__ *.pyc *.pkl *.egg-info
 .DS_Store
 __pycache__/
